@@ -1,5 +1,7 @@
 /*global module, asyncTest, test, ok, start, basket, sinon*/
 'use strict';
+
+
 module( 'Test script API', {
 	teardown: function() {
 		localStorage.clear();
@@ -22,7 +24,6 @@ asyncTest( 'require() 1 script', 2, function() {
 	)
 	.then(function() {
 		clearTimeout( cancel );
-
 		ok( true, 'Callback invoked' );
 		ok( basket.get('fixtures/jquery.min.js'), 'Data exists in localStorage' );
 
@@ -123,13 +124,11 @@ asyncTest( 'store data using expiration (non-expired)', 2, function() {
 		.then(function() {
 			var stamp = basket.get('fixtures/stamp-script.js').stamp;
 			ok( basket.get('fixtures/stamp-script.js'), 'Data exists in localStorage' );
-
 			basket
 				.require({ url: 'fixtures/stamp-script.js' })
 				.then(function() {
 					var stampAfter = basket.get('fixtures/stamp-script.js').stamp;
 					ok( stamp === stampAfter, 'Data retrieved from localStorage' );
-
 					start();
 				});
 		});
@@ -251,8 +250,8 @@ asyncTest( 'remove oldest script in localStorage when Quote Exceeded', 2, functi
 
 asyncTest( 'file is larger then quota limit ', 3, function() {
 	basket
-		.require({ url: 'fixtures/largeScript.js', key: 'largeScript0' }, { url: 'fixtures/largeScript.js', key: 'largeScript1' })
-		.then();
+		.require({ url: 'fixtures/largeScript.js', key: 'largeScript0' }, { url: 'fixtures/largeScript.js', key: 'largeScript1' });
+
 	basket.require({ url: 'fixtures/veryLargeScript.js', key: 'largeScript2' })
 		.then(function() {
 			// check if scripts added was removed from localStorage
@@ -270,7 +269,7 @@ asyncTest( 'non-existant file causes error handler to be called', 2, function() 
 		.then(function() {
 			ok( false, 'The success callback should not be called' );
 			start();
-		}, function(error) {
+		}, function(error, elem) {
 			ok( error, 'Error callback called' );
 			ok( !basket.get( 'non-existant.js' ), 'No cache entry for missing file' );
 			start();
@@ -352,14 +351,18 @@ asyncTest( 'second file is fetched early but executes later', 6, function() {
 
 	var firstPromise = basket.require({ url: '/first.js' });
 	firstPromise.then( function() {
-		ok( basket.get( '/second.js' ), 'second script was already loaded and stored' );
-		ok( basket.first === 1, 'first script should have been executed' );
-		ok( basket.second === 0, 'second script should not have been executed yet' );
+		var first = basket.get( '/first.js' );
+		var second = basket.get( '/second.js' );
+		ok( second, 'second script was already loaded and stored' );
+		ok( second.injected, 'first script should have been executed' );
+		ok( second.injected, 'second script should not have been executed yet' );
 	});
 
 	firstPromise
 		.thenRequire({ url: '/second.js' })
 		.then( function() {
+			var first = basket.get( '/first.js' );
+			var second = basket.get( '/second.js' );
 			ok( basket.first === 1, 'first script is eventually executed' );
 			ok( basket.second === 2, 'second script is eventually executed second' );
 
